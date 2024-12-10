@@ -9,11 +9,18 @@ namespace BackendShop.Core.MapperProfiles
     {
         public CategoryProfile()
         {
-            CreateMap<Category, CategoryDto>()
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CategoryId));
+            //CreateMap<Category, CategoryDto>()
+            //    .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+            //    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CategoryId));
             //.ForMember(x => x.ImageCategory, opt => opt.MapFrom(x =>
             // string.IsNullOrEmpty(x.ImageCategoryPath) ? "/images/noimage.jpg" : $"/images/{x.ImageCategoryPath}"));
+            CreateMap<Category, CategoryDto>()
+                    .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.CategoryId))
+                    .ForMember(dest => dest.ImageCategory, opt => opt.MapFrom(src =>
+                        string.IsNullOrEmpty(src.ImageCategoryPath)
+                        ? "noimage.jpg"  // Файл-заглушка
+                        : src.ImageCategoryPath));
             CreateMap<CategoryCreateViewModel, Category>()
                 .ForMember(x => x.ImageCategoryPath, opt => opt.Ignore());
             CreateMap<CategoryEditViewModel, Category>()
