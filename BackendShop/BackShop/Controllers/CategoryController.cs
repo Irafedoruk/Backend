@@ -25,16 +25,31 @@ namespace BackendShop.BackShop.Controllers
                 return Ok(list);
             }
 
-            [HttpPost]
+            [HttpPost("create")]
             public async Task<IActionResult> Create([FromForm] CategoryCreateViewModel model)
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+            try
             {
                 var imageName = await imageHulk.Save(model.ImageCategory);
                 var entity = mapper.Map<Category>(model);
                 entity.ImageCategoryPath = imageName;
+
                 _context.Categories.Add(entity);
-                _context.SaveChanges();
-                return Ok();
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Category created successfully!" });
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return StatusCode(500, "An error occurred while creating the category.");
+            }
+        }
 
             [HttpDelete("{id}")]
             public async Task<IActionResult> Delete(int id)
