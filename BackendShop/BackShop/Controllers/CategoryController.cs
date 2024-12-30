@@ -17,85 +17,97 @@ namespace BackendShop.BackShop.Controllers
     {
     [HttpGet]
     public IActionResult GetList()
-            {
-                Thread.Sleep(1000);
-                var list = _context.Categories
-                    .ProjectTo<CategoryDto>(mapper.ConfigurationProvider)
-                    .ToList();
-                return Ok(list);
-            }
+    {
+        Thread.Sleep(1000);
+        var list = _context.Categories
+            .ProjectTo<CategoryDto>(mapper.ConfigurationProvider)
+            .ToList();
+        return Ok(list);
+    }
 
-            [HttpPost("create")]
-            public async Task<IActionResult> Create([FromForm] CategoryCreateViewModel model)
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-            try
-            {
-                var imageName = await imageHulk.Save(model.ImageCategory);
-                var entity = mapper.Map<Category>(model);
-                entity.ImageCategoryPath = imageName;
-
-                _context.Categories.Add(entity);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = "Category created successfully!" });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                return StatusCode(500, "An error occurred while creating the category.");
-            }
+    [HttpPost("create")]
+    public async Task<IActionResult> Create([FromForm] CategoryCreateViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
         }
 
-            [HttpDelete("{id}")]
-            public async Task<IActionResult> Delete(int id)
-            {
-                var entity = _context.Categories.SingleOrDefault(x => x.CategoryId == id);
-                if (entity == null)
-                    return NotFound();
-                if (!string.IsNullOrEmpty(entity.ImageCategoryPath))
-                    imageHulk.Delete(entity.ImageCategoryPath);
-                _context.Categories.Remove(entity);
-                _context.SaveChanges();
-                return Ok();
-            }
-
-        [HttpPut]
-        public async Task<IActionResult> Edit([FromForm] CategoryDto model)
+        try
         {
-            if (model == null) return NotFound();
-            var category = _context.Categories.SingleOrDefault(x => x.CategoryId == model.Id);
-            category = mapper.Map(model, category);
-            if (model.ImageCategory != null)
+            var imageName = await imageHulk.Save(model.ImageCategory);
+            var entity = mapper.Map<Category>(model);
+            entity.ImageCategoryPath = imageName;
+
+            _context.Categories.Add(entity);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Category created successfully!" });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            return StatusCode(500, "An error occurred while creating the category.");
+        }
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var entity = _context.Categories.SingleOrDefault(x => x.CategoryId == id);
+        if (entity == null)
+            return NotFound();
+        if (!string.IsNullOrEmpty(entity.ImageCategoryPath))
+            imageHulk.Delete(entity.ImageCategoryPath);
+        _context.Categories.Remove(entity);
+        _context.SaveChanges();
+        return Ok();
+    }
+
+    [HttpPut]
+    public async Task<IActionResult> Edit([FromForm] CategoryDto model, [FromForm] string? currentImage)
+    {
+        var category = _context.Categories.SingleOrDefault(x => x.CategoryId == model.Id);
+        if (category == null) return NotFound();
+
+        category.Name = model.Name;
+
+        if (model.ImageCategory != null)
+        {
+            if (!string.IsNullOrEmpty(category.ImageCategoryPath))
             {
                 imageHulk.Delete(category.ImageCategoryPath);
-                string fname = await imageHulk.Save(model.ImageCategory);
-                category.ImageCategoryPath = fname;
             }
-            _context.SaveChanges();
-            return Ok();
+            category.ImageCategoryPath = await imageHulk.Save(model.ImageCategory);
         }
-
-        [HttpGet("{id}")]
-            public IActionResult GetById(int id)
-            {
-                var item = _context.Categories
-                    .ProjectTo<CategoryDto>(mapper.ConfigurationProvider)
-                    .SingleOrDefault(x => x.Id == id);
-                return Ok(item);
-            }
-
-            //[HttpGet("names")]
-            //public async Task<IActionResult> GetCategoriesNames()
-            //{
-            //    var result = await context.Categories
-            //    .ProjectTo<SelectItemViewModel>(mapper.ConfigurationProvider)
-            //    .ToListAsync();
-            //    return Ok(result);
-            //}
+        else if (!string.IsNullOrEmpty(currentImage))
+        {
+            category.ImageCategoryPath = currentImage;
         }
+        else // Якщо нічого не передано, встановлюємо noimage.jpg
+        {
+            category.ImageCategoryPath = "noimage.jpg";
+        }
+        await _context.SaveChangesAsync();
+        return Ok();
+    }
+
+    [HttpGet("{id}")]
+    public IActionResult GetById(int id)
+    {
+        var item = _context.Categories
+            .ProjectTo<CategoryDto>(mapper.ConfigurationProvider)
+            .SingleOrDefault(x => x.Id == id);
+        return Ok(item);
+    }
+
+    //[HttpGet("names")]
+    //public async Task<IActionResult> GetCategoriesNames()
+    //{
+    //    var result = await context.Categories
+    //    .ProjectTo<SelectItemViewModel>(mapper.ConfigurationProvider)
+    //    .ToListAsync();
+    //    return Ok(result);
+    //}
+    }
 }
