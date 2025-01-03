@@ -27,7 +27,7 @@ namespace BackendShop.Core.Dto.Product
         public int QuantityInStock { get; set; }
         //public bool IsAvailable { get; set; }
 
-        public string? Model { get; set; }
+        //public string? Model { get; set; }
         public int SubCategoryId { get; set; }
         public string? SubCategoryName { get; set; }
     }

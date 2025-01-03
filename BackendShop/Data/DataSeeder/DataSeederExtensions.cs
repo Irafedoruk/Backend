@@ -67,6 +67,7 @@ namespace BackendShop.Data.DataSeeder
                     dbContext.SubCategories.AddRange(subCategories);
                     dbContext.SaveChanges();
                 }
+                // Seed Products
                 if (!dbContext.Products.Any())
                 {
                     var subcategories = dbContext.SubCategories.ToList();
@@ -92,7 +93,7 @@ namespace BackendShop.Data.DataSeeder
                             Price = decimal.Parse(faker.Commerce.Price()),
                             QuantityInPack = faker.Random.Int(1, 10),
                             QuantityInStock = faker.Random.Int(0, 100),
-                            Model = faker.Commerce.ProductMaterial(),
+                            //Model = faker.Commerce.ProductMaterial(),
                             SubCategoryId = subCategory.SubCategoryId // Зв'язок з підкатегорією
                         };
 

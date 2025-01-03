@@ -65,13 +65,14 @@ namespace BackendShop.BackShop.Controllers
     }
 
     [HttpPut]
-    public async Task<IActionResult> Edit([FromForm] CategoryDto model, [FromForm] string? currentImage)
+    public async Task<IActionResult> Edit([FromForm] CategoryEditViewModel model, [FromForm] string? currentImage)
     {
         var category = _context.Categories.SingleOrDefault(x => x.CategoryId == model.Id);
         if (category == null) return NotFound();
 
         category.Name = model.Name;
 
+        // Якщо завантажено нове зображення
         if (model.ImageCategory != null)
         {
             if (!string.IsNullOrEmpty(category.ImageCategoryPath))
@@ -80,12 +81,9 @@ namespace BackendShop.BackShop.Controllers
             }
             category.ImageCategoryPath = await imageHulk.Save(model.ImageCategory);
         }
-        else if (!string.IsNullOrEmpty(currentImage))
+        else if (string.IsNullOrEmpty(category.ImageCategoryPath))
         {
-            category.ImageCategoryPath = currentImage;
-        }
-        else // Якщо нічого не передано, встановлюємо noimage.jpg
-        {
+            // Якщо нема зображення і поточне значення відсутнє
             category.ImageCategoryPath = "noimage.jpg";
         }
         await _context.SaveChangesAsync();
@@ -101,13 +99,14 @@ namespace BackendShop.BackShop.Controllers
         return Ok(item);
     }
 
-    //[HttpGet("names")]
-    //public async Task<IActionResult> GetCategoriesNames()
-    //{
-    //    var result = await context.Categories
-    //    .ProjectTo<SelectItemViewModel>(mapper.ConfigurationProvider)
-    //    .ToListAsync();
-    //    return Ok(result);
-    //}
+    // Для отримання підкатегорій категорії
+    [HttpGet("subcategories")]
+    public async Task<IActionResult> GetSubCategoriesByCategoryId(int categoryId)
+    {
+        var subCategories = await _context.SubCategories
+                                            .Where(sc => sc.CategoryId == categoryId)
+                                            .ToListAsync();
+        return Ok(subCategories);
+    }
     }
 }

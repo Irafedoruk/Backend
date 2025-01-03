@@ -3,6 +3,7 @@ using BackendShop.Data.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BackendShop.Migrations
 {
     [DbContext(typeof(ShopDbContext))]
-    partial class ShopDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250101075156_add prop CurrentImage to CategoryEditViewModel")]
+    partial class addpropCurrentImagetoCategoryEditViewModel
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -68,6 +71,9 @@ namespace BackendShop.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Manufacturer")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Model")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
@@ -202,7 +208,7 @@ namespace BackendShop.Migrations
             modelBuilder.Entity("BackendShop.Data.Entities.ProductImageEntity", b =>
                 {
                     b.HasOne("BackendShop.Data.Entities.Product", "Product")
-                        .WithMany("ProductImages")
+                        .WithMany("Images")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -228,9 +234,9 @@ namespace BackendShop.Migrations
 
             modelBuilder.Entity("BackendShop.Data.Entities.Product", b =>
                 {
-                    b.Navigation("ProductDescImages");
+                    b.Navigation("Images");
 
-                    b.Navigation("ProductImages");
+                    b.Navigation("ProductDescImages");
                 });
 
             modelBuilder.Entity("BackendShop.Data.Entities.SubCategory", b =>

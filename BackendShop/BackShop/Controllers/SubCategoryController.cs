@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using BackendShop.Core.Dto.Category;
 using BackendShop.Core.Dto.SubCategory;
 using BackendShop.Core.Interfaces;
 using BackendShop.Core.Services;
@@ -38,8 +39,8 @@ namespace BackendShop.BackShop.Controllers
             return Ok(item);
         }
 
-        // POST: api/SubCategory
-        [HttpPost]
+        // POST: api/SubCategory/create
+        [HttpPost("create")]
         public async Task<IActionResult> Create([FromForm] CreateSubCategoryDto model)
         {
             if (!_context.Categories.Any(c => c.CategoryId == model.CategoryId))
@@ -56,21 +57,36 @@ namespace BackendShop.BackShop.Controllers
         }
 
         // PUT: api/SubCategory/{id}
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Edit(int id, [FromForm] SubCategoryDto model)
+        [HttpPut]
+        public async Task<IActionResult> Edit([FromForm] EditSubCategoryDto model)
         {
-            var subCategory = _context.SubCategories.SingleOrDefault(x => x.SubCategoryId == id);
+            var subCategory = _context.SubCategories.SingleOrDefault(x => x.SubCategoryId == model.Id);
             if (subCategory == null) return NotFound();
 
-            mapper.Map(model, subCategory);
+            // Update basic fields
+            subCategory.Name = model.Name;
+            subCategory.CategoryId = model.CategoryId;
+
+            // Handle image update
             if (model.ImageSubCategory != null)
             {
-                imageHulk.Delete(subCategory.ImageSubCategoryPath);
-                string fname = await imageHulk.Save(model.ImageSubCategory);
-                subCategory.ImageSubCategoryPath = fname;
-            }
+                // Delete the old image if it exists
+                if (!string.IsNullOrEmpty(subCategory.ImageSubCategoryPath))
+                {
+                    imageHulk.Delete(subCategory.ImageSubCategoryPath);
+                }
 
+                // Save the new image
+                var newImageName = await imageHulk.Save(model.ImageSubCategory);
+                subCategory.ImageSubCategoryPath = newImageName;
+            }
+            else if (string.IsNullOrEmpty(subCategory.ImageSubCategoryPath))
+            {
+                // Якщо нема зображення і поточне значення відсутнє
+                subCategory.ImageSubCategoryPath = "noimage.jpg";
+            }
             await _context.SaveChangesAsync();
+
             return Ok();
         }
 

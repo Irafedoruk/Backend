@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using BackendShop.Core.Dto.Category;
 using BackendShop.Core.Dto.Product;
 using BackendShop.Core.Interfaces;
 using BackendShop.Core.Services;
@@ -16,9 +17,9 @@ namespace BackendShop.BackShop.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController(ShopDbContext _context, IMapper mapper, IImageHulk imageHulk, IConfiguration configuration) : ControllerBase
+    public class ProductsController(ShopDbContext _context, IMapper mapper, IImageHulk imageHulk, IConfiguration configuration) : ControllerBase
     {
-        // GET: api/Product
+        // GET: api/Products
         [HttpGet]
         public async Task<IActionResult> GetProducts()
         {
@@ -28,15 +29,41 @@ namespace BackendShop.BackShop.Controllers
             return Ok(model);
         }
 
-        //Post: api/Product
-        [HttpPost]
+        //public async Task<IActionResult> Create([FromForm] CategoryCreateViewModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
+
+        //    try
+        //    {
+        //        var imageName = await imageHulk.Save(model.ImageCategory);
+        //        var entity = mapper.Map<Category>(model);
+        //        entity.ImageCategoryPath = imageName;
+
+        //        _context.Categories.Add(entity);
+        //        await _context.SaveChangesAsync();
+
+        //        return Ok(new { message = "Category created successfully!" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Error: {ex.Message}");
+        //        return StatusCode(500, "An error occurred while creating the category.");
+        //    }
+        //}
+
+        //Post: api/Product/create
+        [HttpPost("create")]
         public async Task<IActionResult> Create([FromForm] CreateProductDto model)
         {
+
             var entity = mapper.Map<Product>(model);
             _context.Products.Add(entity);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
-            if (model.ImagesDescIds.Any())
+            if (model.ImagesDescIds?.Any() == true)
             {
                 await _context.ProductDescImages
                     .Where(x => model.ImagesDescIds.Contains(x.Id))
@@ -44,7 +71,7 @@ namespace BackendShop.BackShop.Controllers
             }
 
             if (model.Images != null)
-            {
+            {                
                 var p = 1;
                 foreach (var image in model.Images)
                 {
@@ -59,10 +86,11 @@ namespace BackendShop.BackShop.Controllers
                     await _context.SaveChangesAsync();
                 }
             }
+            Console.WriteLine($"Received {model.Images?.Count()} images.");
             return Created();
         }
 
-        // GET: api/Product/2
+        // GET: api/Products/2
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProductById(int id)
         {
@@ -72,69 +100,55 @@ namespace BackendShop.BackShop.Controllers
             if (product == null) return NotFound();
             return Ok(product);
         }
+
         // PUT: api/Product/2
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> EditProduct(int id, [FromForm] ProductEditModel model)
-        //{
-        //    var product = await _context.Products
-        //        .Include(p => p.Images) // Завантажуємо всі зображення продукту
-        //        .FirstOrDefaultAsync(p => p.Id == id);
+        [HttpPut]
+        public async Task<IActionResult> Edit([FromForm] EditProductDto model)
+        {
+            var request = this.Request;
+            var product = await _context.Products
+                .Include(p => p.ProductImages)
+                .FirstOrDefaultAsync(p => p.ProductId == model.Id);
 
-        //    if (product == null)
-        //    {
-        //        return NotFound();
-        //    }
+            mapper.Map(model, product);
 
-        //    // Мапимо основні поля з моделі редагування на сутність продукту
-        //    mapper.Map(model, product);
+            var oldNameImages = model.Images.Where(x => x.ContentType.Contains("old-image"))
+                .Select(x => x.FileName) ?? [];
 
-        //    var dir = configuration["ImageDir"];
-        //    var dirPath = Path.Combine(Directory.GetCurrentDirectory(), dir);
+            var imgToDelete = product?.ProductImages?.Where(x => !oldNameImages.Contains(x.Image)) ?? [];
+            foreach (var imgDel in imgToDelete)
+            {
+                _context.ProductImageEntity.Remove(imgDel);
+                imageHulk.Delete(imgDel.Image);
+            }
 
-        //    // Додаємо нові зображення, якщо вони надані
-        //    if (model.Images != null && model.Images.Any())
-        //    {
-        //        foreach (var imageFile in model.Images)
-        //        {
-        //            string imageName = Guid.NewGuid() + Path.GetExtension(imageFile.FileName);
-        //            var fileSave = Path.Combine(dirPath, imageName);
+            if (model.Images is not null)
+            {
+                int index = 0;
+                foreach (var image in model.Images)
+                {
+                    if (image.ContentType == "old-image")
+                    {
+                        var oldImage = product?.ProductImages?.FirstOrDefault(x => x.Image == image.FileName)!;
+                        oldImage.Priority = index;
+                    }
+                    else
+                    {
+                        var imagePath = await imageHulk.Save(image);
+                        _context.ProductImageEntity.Add(new ProductImageEntity
+                        {
+                            Image = imagePath,
+                            Product = product,
+                            Priority = index
+                        });
+                    }
+                    index++;
+                }
+            }
+            await _context.SaveChangesAsync();
 
-        //            using (var stream = new FileStream(fileSave, FileMode.Create))
-        //                await imageFile.CopyToAsync(stream);
-
-        //            var productImage = new ProductImageEntity
-        //            {
-        //                ProductId = product.Id,
-        //                Image = imageName,
-        //                Priority = model.Priority // Можна передавати пріоритет для зображень
-        //            };
-        //            _context.ProductImages.Add(productImage);
-        //        }
-        //    }
-
-        // Видаляємо старі зображення, якщо їх потрібно замінити
-        //    if (model.RemoveImageIds != null && model.RemoveImageIds.Any())
-        //    {
-        //        var imagesToRemove = product.Images
-        //            .Where(img => model.RemoveImageIds.Contains(img.Id))
-        //            .ToList();
-
-        //        foreach (var image in imagesToRemove)
-        //        {
-        //            var imagePath = Path.Combine(dirPath, image.Image);
-        //            if (System.IO.File.Exists(imagePath))
-        //            {
-        //                System.IO.File.Delete(imagePath);
-        //            }
-        //            _context.ProductImages.Remove(image);
-        //        }
-        //    }
-
-        //    _context.Products.Update(product);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
+            return Ok();
+        }
 
         [HttpPost("upload")]
         public async Task<IActionResult> UploadDescImage([FromForm] ProductDescImageUploadViewModel model)
@@ -153,18 +167,18 @@ namespace BackendShop.BackShop.Controllers
             return BadRequest();
         }
 
-        //DELETE: api/Product/2
+        //DELETE: api/Products/2
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
             var product = _context.Products
-                .Include(x => x.Images)
+                .Include(x => x.ProductImages)
                 .Include(x => x.ProductDescImages)
                 .SingleOrDefault(x => x.ProductId == id);
             if (product == null) return NotFound();
 
-            if (product.Images != null)
-                foreach (var p in product.Images)
+            if (product.ProductImages != null)
+                foreach (var p in product.ProductImages)
                     imageHulk.Delete(p.Image);
 
             if (product.ProductDescImages != null)

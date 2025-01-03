@@ -9,29 +9,45 @@ namespace BackendShop.Core.MapperProfiles
         public ProductProfile()
         {
             CreateMap<Product, ProductDto>()
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ProductId))
                 .ForMember(dest => dest.SubCategoryName, opt => opt.MapFrom(src => src.SubCategory.Name))
-                .ForMember(x => x.Images, opt => opt.MapFrom(x => x.Images.OrderBy(x => x.Priority)
+                .ForMember(x => x.Images, opt => opt.MapFrom(x => x.ProductImages.OrderBy(x => x.Priority)
                     .Select(p => p.Image).ToArray()));
 
-            CreateMap<CreateProductDto, Product>();
+            CreateMap<ProductDto, Product>();
+
+            
+            CreateMap<ProductDescImageEntity, ProductDescImageIdViewModel>();
+
+            CreateMap<CreateProductDto, Product>()
+                .ForMember(dest => dest.ProductImages, opt => opt.Ignore()) // Ігноруємо Images, якщо вони додаються окремо
+                .ForMember(dest => dest.SubCategory, opt => opt.Ignore()); // Ігноруємо зв'язок SubCategory
 
             CreateMap<EditProductDto, Product>()
-                .ForMember(x => x.Images, opt => opt.Ignore());
+                .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.SubCategory, opt => opt.Ignore()) // Залежно від вашої логіки
+                .ForMember(dest => dest.ProductImages, opt => opt.Ignore()); // Якщо ви не хочете автоматично змінювати зображення в продукті
+            //CreateMap<ProductEditViewModel, ProductEntity>()
+            //    .ForMember(x => x.ProductImages, opt => opt.Ignore());
 
-           CreateMap<IFormFile, ProductImageEntity>()
-             .ForMember(dest => dest.Image, opt => opt.MapFrom(src => src.FileName)) // Це базове значення, якщо Image — це шлях
-             .ForMember(dest => dest.Priority, opt => opt.Ignore());
-
-            CreateMap<ProductDescImageEntity, ProductDescImageIdViewModel>();
             //CreateMap<Product, ProductDto>()
-            //    .ForMember(dest => dest.Images, opt => opt.MapFrom(src =>
-            //        src.Images != null ? src.Images.Select(img => $"/images/{img.Image}").ToList() : new List<string>()))
-            //    .ForMember(dest => dest.SubCategoryName, opt => opt.MapFrom(src => src.SubCategory != null ? src.SubCategory.Name : string.Empty));
+            //    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.ProductId))
+            //    .ForMember(dest => dest.SubCategoryName, opt => opt.MapFrom(src => src.SubCategory.Name))
+            //    .ForMember(x => x.Images, opt => opt.MapFrom(x => x.Images.OrderBy(x => x.Priority)
+            //        .Select(p => p.Image).ToArray()));
 
-            //CreateMap<CreateProductDto, Product>().ReverseMap();
+            //CreateMap<CreateProductDto, Product>();
 
-            ////CreateMap<ProductEditViewModel, ProductEntity>()
-            //// .ForMember(x => x.ProductImages, opt => opt.Ignore());
+            //CreateMap<EditProductDto, Product>()
+            //    .ForMember(x => x.ProductImages, opt => opt.Ignore());
+
+            ////CreateMap<IFormFile, ProductImageEntity>()
+            ////  .ForMember(dest => dest.Image, opt => opt.MapFrom(src => src.FileName)) // Це базове значення, якщо Image — це шлях
+            ////  .ForMember(dest => dest.Priority, opt => opt.Ignore());
+            //CreateMap<IFormFile, ProductImageEntity>()
+            //    .ForMember(dest => dest.Image, opt => opt.Ignore())
+            //    .ForMember(dest => dest.Priority, opt => opt.Ignore());
+
 
             //CreateMap<ProductDescImageEntity, ProductDescImageIdViewModel>();
         }
