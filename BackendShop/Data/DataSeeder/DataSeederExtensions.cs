@@ -1,6 +1,8 @@
-﻿using BackendShop.Core.Interfaces;
+﻿using BackendShop.Constants;
+using BackendShop.Core.Interfaces;
 using BackendShop.Data.Data;
 using BackendShop.Data.Entities;
+using BackendShop.Data.Entities.Identity;
 using Bogus;
 using Bogus.DataSets;
 using Microsoft.AspNetCore.Identity;
@@ -16,8 +18,49 @@ namespace BackendShop.Data.DataSeeder
             using (var scope = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>().CreateScope())
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<ShopDbContext>();
+                var userManager = scope.ServiceProvider.GetRequiredService<UserManager<UserEntity>>();
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<RoleEntity>>();
+
                 var imageHulk = scope.ServiceProvider.GetRequiredService<IImageHulk>();
                 dbContext.Database.Migrate();
+
+
+                // seed roles
+                if (dbContext.Roles.Count() == 0)
+                {
+                    var roles = new[]
+                    {
+                        new RoleEntity { Name = Roles.Admin },
+                        new RoleEntity { Name = Roles.User }
+                    };
+
+                    foreach (var role in roles)
+                    {
+                        var outcome = roleManager.CreateAsync(role).Result;
+                        if (!outcome.Succeeded) Console.WriteLine($"Failed to create role: {role.Name}");
+                    }
+                }
+
+                // seed users
+                if (dbContext.Users.Count() == 0)
+                {
+                    var users = new[]
+                    {
+                        new { User = new UserEntity { Firstname = "Tony", Lastname = "Stark", UserName = "admin@gmail.com", Email = "admin@gmail.com" }, Password = "admin1", Role = Roles.Admin },
+                        new { User = new UserEntity { Firstname = "Boba", Lastname = "Gray", UserName = "user@gmail.com", Email = "user@gmail.com" }, Password = "bobapass1", Role = Roles.User },
+                        new { User = new UserEntity { Firstname = "Biba", Lastname = "Undefined", UserName = "biba@gmail.com", Email = "biba@gmail.com" }, Password = "bibapass3", Role = Roles.User }
+                    };
+
+                    foreach (var i in users)
+                    {
+                        var outcome = userManager.CreateAsync(i.User, i.Password).Result;
+
+                        if (!outcome.Succeeded)
+                            Console.WriteLine($"Failed to create user: {i.User.UserName}");
+                        else
+                            outcome = userManager.AddToRoleAsync(i.User, i.Role).Result;
+                    }
+                }
 
                 // Seed Categories
                 if (!dbContext.Categories.Any())

@@ -2,6 +2,8 @@ using BackendShop.Core.Interfaces;
 using BackendShop.Core.Services;
 using BackendShop.Data.Data;
 using BackendShop.Data.DataSeeder;
+using BackendShop.Data.Entities.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
@@ -15,6 +17,19 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddDbContext<ShopDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
+{
+    options.Stores.MaxLengthForKeys = 128;
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 5;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
+    .AddEntityFrameworkStores<ShopDbContext>()
+    .AddDefaultTokenProviders();
+
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
 builder.Services.AddScoped<IImageHulk, ImageHulk>();
 

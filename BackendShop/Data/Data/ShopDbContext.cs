@@ -1,9 +1,11 @@
 ﻿using BackendShop.Data.Entities;
+using BackendShop.Data.Entities.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace BackendShop.Data.Data
 {
-    public class ShopDbContext : DbContext
+    public class ShopDbContext : IdentityDbContext<UserEntity, RoleEntity, int>
     {
         public ShopDbContext(DbContextOptions<ShopDbContext> options)
             : base(options)
@@ -19,6 +21,18 @@ namespace BackendShop.Data.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            modelBuilder.Entity<UserRoleEntity>(ur =>
+            {
+                ur.HasOne(ur => ur.Role)
+                    .WithMany(r => r.UserRoles)
+                    .HasForeignKey(r => r.RoleId)
+                    .IsRequired();
+
+                ur.HasOne(ur => ur.User)
+                    .WithMany(r => r.UserRoles)
+                    .HasForeignKey(u => u.UserId)
+                    .IsRequired();
+            });
             //modelBuilder.Entity<Product>()
             //    .Property(p => p.Price)
             //    .HasColumnType("decimal(18,2)");
