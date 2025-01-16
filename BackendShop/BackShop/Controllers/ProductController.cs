@@ -167,6 +167,24 @@ namespace BackendShop.BackShop.Controllers
             return BadRequest();
         }
 
+        // GET: api/Products/bySubCategory/2
+        [HttpGet("bySubCategory/{subCategoryId}")]
+        public async Task<IActionResult> GetProductsBySubCategoryId(int subCategoryId)
+        {
+            var products = await _context.Products
+                .Where(p => p.SubCategoryId == subCategoryId) // Фільтруємо продукти за ID підкатегорії
+                .ProjectTo<ProductDto>(mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            if (products == null || products.Count == 0)
+            {
+                //return NotFound(new { message = "Продукти для цієї підкатегорії не знайдені" });
+                return Ok(new List<Product>());
+            }
+
+            return Ok(products);
+        }
+
         //DELETE: api/Products/2
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)

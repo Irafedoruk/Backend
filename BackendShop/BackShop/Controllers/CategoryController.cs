@@ -18,7 +18,7 @@ namespace BackendShop.BackShop.Controllers
     [HttpGet]
     public IActionResult GetList()
     {
-            var users = _context.Users.ToList();
+            //var users = _context.Users.ToList();
 
         Thread.Sleep(1000);
         var list = _context.Categories
