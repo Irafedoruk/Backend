@@ -14,95 +14,83 @@ namespace BackendShop.BackShop.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SubCategoryController(ShopDbContext _context, IMapper mapper, IImageHulk imageHulk, IConfiguration configuration) : ControllerBase
+    public class SubCategoryController : ControllerBase
     {
+        private readonly ISubCategoryService _subCategoryService;
+
+        public SubCategoryController(ISubCategoryService subCategoryService)
+        {
+            _subCategoryService = subCategoryService;
+        }
+
         // GET: api/SubCategory
         [HttpGet]
-        public IActionResult GetList()
+        public async Task<IActionResult> GetList()
         {
-            var list = _context.SubCategories
-                .ProjectTo<SubCategoryDto>(mapper.ConfigurationProvider)
-                .ToList();
+            var list = await _subCategoryService.GetListAsync();
             return Ok(list);
         }
 
         // GET: api/SubCategory/{id}
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var item = _context.SubCategories
-                .ProjectTo<SubCategoryDto>(mapper.ConfigurationProvider)
-                .SingleOrDefault(x => x.Id == id);
+            var item = await _subCategoryService.GetByIdAsync(id);
             if (item == null)
                 return NotFound();
-
             return Ok(item);
+        }
+
+        [HttpGet("byCategory/{categoryId}")]
+        public async Task<IActionResult> GetByCategoryId(int categoryId)
+        {
+            var list = await _subCategoryService.GetByCategoryIdAsync(categoryId);
+            return Ok(list);
         }
 
         // POST: api/SubCategory/create
         [HttpPost("create")]
         public async Task<IActionResult> Create([FromForm] CreateSubCategoryDto model)
         {
-            if (!_context.Categories.Any(c => c.CategoryId == model.CategoryId))
+            try
             {
-                return BadRequest("Invalid CategoryId.");
+                await _subCategoryService.CreateAsync(model);
+                return Ok();
             }
-
-            var imageName = await imageHulk.Save(model.ImageSubCategory);
-            var entity = mapper.Map<SubCategory>(model);
-            entity.ImageSubCategoryPath = imageName;
-            _context.SubCategories.Add(entity);
-            await _context.SaveChangesAsync();
-            return Ok();
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         // PUT: api/SubCategory/{id}
         [HttpPut]
         public async Task<IActionResult> Edit([FromForm] EditSubCategoryDto model)
         {
-            var subCategory = _context.SubCategories.SingleOrDefault(x => x.SubCategoryId == model.Id);
-            if (subCategory == null) return NotFound();
-
-            // Update basic fields
-            subCategory.Name = model.Name;
-            subCategory.CategoryId = model.CategoryId;
-
-            // Handle image update
-            if (model.ImageSubCategory != null)
+            try
             {
-                // Delete the old image if it exists
-                if (!string.IsNullOrEmpty(subCategory.ImageSubCategoryPath))
-                {
-                    imageHulk.Delete(subCategory.ImageSubCategoryPath);
-                }
-
-                // Save the new image
-                var newImageName = await imageHulk.Save(model.ImageSubCategory);
-                subCategory.ImageSubCategoryPath = newImageName;
+                await _subCategoryService.EditAsync(model);
+                return Ok();
             }
-            else if (string.IsNullOrEmpty(subCategory.ImageSubCategoryPath))
+            catch (Exception ex)
             {
-                // Якщо нема зображення і поточне значення відсутнє
-                subCategory.ImageSubCategoryPath = "noimage.jpg";
+                return BadRequest(ex.Message);
             }
-            await _context.SaveChangesAsync();
-
-            return Ok();
         }
 
         // DELETE: api/SubCategory/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var subCategory = _context.SubCategories.SingleOrDefault(x => x.SubCategoryId == id);
-            if (subCategory == null) return NotFound();
-
-            if (!string.IsNullOrEmpty(subCategory.ImageSubCategoryPath))
-                imageHulk.Delete(subCategory.ImageSubCategoryPath);
-
-            _context.SubCategories.Remove(subCategory);
-            await _context.SaveChangesAsync();
-            return Ok();
+            try
+            {
+                await _subCategoryService.DeleteAsync(id);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }
