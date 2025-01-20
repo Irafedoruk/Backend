@@ -23,6 +23,9 @@ builder.Services.AddScoped<IImageHulk, ImageHulk>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISubCategoryService, SubCategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<ICartService, CartService>();
 
 builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
 {
@@ -37,8 +40,6 @@ builder.Services.AddIdentity<UserEntity, RoleEntity>(options =>
     .AddDefaultTokenProviders();
 
 builder.Services.AddAutoMapper(typeof(Program).Assembly);
-builder.Services.AddScoped<IImageHulk, ImageHulk>();
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 var singinKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetValue<String>("JwtSecretKey")));
 

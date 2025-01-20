@@ -12,5 +12,11 @@ namespace BackendShop.Data.Entities.Identity
         [StringLength(100)]
         public string? Firstname { get; set; }
         public virtual ICollection<UserRoleEntity>? UserRoles { get; set; }
+        public DateTime? Birthdate { get; set; }
+        //public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
+        public ICollection<Cart> Carts { get; set; } = new List<Cart>();
+        //public ICollection<RefreshToken>? RefreshTokens { get; set; }
     }
 }
